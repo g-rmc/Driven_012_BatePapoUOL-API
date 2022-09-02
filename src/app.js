@@ -48,14 +48,6 @@ app.post('/participants', async (req, res) =>{
         return;
     }
 
-    /*
-    try {
-        const participants = await db.collection('participants').find().toArray();
-        console.log(participants)
-    } catch (error) {
-        console.log(error)
-    } */
-
     try {
         const userSameName = await db.collection('participants').findOne({name});
         if(userSameName){
@@ -98,5 +90,15 @@ app.post('/participants', async (req, res) =>{
     } */
 })
 
+app.get('/participants', async (req, res) =>{
+
+    try {
+        const participants = await db.collection('participants').find().toArray();
+        res.send(participants);
+    } catch (error) {
+        res.status(400).send(error)
+    }
+
+})
 
 app.listen('5000', () => console.log('Listening on 5000'))
