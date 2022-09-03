@@ -83,6 +83,7 @@ app.post('/participants', async (req, res) =>{
         res.sendStatus(201);
     } catch (error) {
         res.status(500).send(error);
+        return;
     } 
 
     try {
@@ -133,7 +134,8 @@ app.post('/messages', async (req, res) => {
             return;
         }
     } catch (error) {
-        res.status(500).send(error)
+        res.status(500).send(error);
+        return;
     }
 
     try {
@@ -160,6 +162,33 @@ app.get('/messages', async (req, res) => {
 
 })
 
+//Status
 
+app.post('/status', async (req, res) => {
+
+    const { user } = req.headers;
+
+    try {
+        const validName = await db.collection('participants').findOne({name: user});
+        if (!validName){
+            res.sendStatus(404);
+            return;
+        }
+    } catch (error) {
+        res.status(500).send(error);
+        return;
+    }
+
+    try {
+        await db.collection('participants').updateOne({
+            name: user
+        }, {
+            $set: {lastStatus: Date.now()}
+        })
+        res.sendStatus(200);
+    } catch (error) {
+        res.status(500).send(error);
+    }
+})
 
 app.listen('5000', () => console.log('Listening on 5000'))
