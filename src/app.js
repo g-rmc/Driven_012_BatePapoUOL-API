@@ -29,6 +29,29 @@ const messageSchema = joi.object({
     time: joi.string().required()
 })
 
+function filterMessage(message, user) {
+    if (message.type === 'private_message') {
+        if (message.from === user || message.to === user){
+            return true;
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
+function maxMessages(index, limit, length) {
+    if (!isNaN(limit)) {
+        if (index >= length - limit) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+       return true 
+    }
+}
+
 //Participants
 
 app.post('/participants', async (req, res) =>{
@@ -114,13 +137,28 @@ app.post('/messages', async (req, res) => {
     }
 
     try {
-        await db.collection('participants').insertOne(message);
+        await db.collection('messages').insertOne(message);
         res.sendStatus(201);
     } catch (error) {
         res.status(500).send(error)
     }
 })
 
+app.get('/messages', async (req, res) => {
+
+    const limit = parseInt(req.query.limit);
+    const { user } = req.headers;
+
+    try {
+        const messages = await db.collection('messages').find().toArray();
+        let filteredMessages = messages.filter(message => filterMessage(message, user));
+        filteredMessages = filteredMessages.filter((message, index) => maxMessages(index, limit, filteredMessages.length));
+        res.send(filteredMessages)
+    } catch (error) {
+        res.status(500).send(error)
+    }
+
+})
 
 
 
