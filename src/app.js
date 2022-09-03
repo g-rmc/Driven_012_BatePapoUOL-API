@@ -111,6 +111,46 @@ app.get('/participants', async (req, res) =>{
 
 })
 
+setInterval(async () => {
+
+    let participants = [];
+    const now = Date.now();
+
+    try {
+        participants = await db.collection('participants').find().toArray();
+    } catch (error) {
+        console.log(error);
+    }
+
+    const inactives = participants.filter(participant => now - participant.lastStatus > 10000)
+    
+    for (let i = 0; i < inactives.length; i++){
+
+        const query = {_id: inactives[i]._id};
+
+        try {
+            await db.collection('participants').deleteOne(query);
+        } catch (error) {
+            console.log(error);
+            break;
+        }
+
+        try {
+            await db.collection('messages').insertOne({
+                from: inactives[i].name,
+                to: 'Todos',
+                text: 'sai da sala...',
+                type: 'status',
+                time: dayjs().format('HH:mm:ss')
+            })
+        } catch (error) {
+            console.log(error);
+            break;
+        }
+    }
+
+},15000);
+
 //Messages
 
 app.post('/messages', async (req, res) => {
