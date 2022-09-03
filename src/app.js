@@ -25,7 +25,7 @@ const messageSchema = joi.object({
     from: joi.string().required(),
     to: joi.string().required(),
     text: joi.string().required(),
-    type: joi.string().required(),
+    type: joi.string().required().valid('message', 'private_message'),
     time: joi.string().required()
 })
 
@@ -48,7 +48,7 @@ app.post('/participants', async (req, res) =>{
             return;
         }
     } catch (error) {
-        res.status(400).send(error);
+        res.status(500).send(error);
         return;
     }
     
@@ -59,7 +59,7 @@ app.post('/participants', async (req, res) =>{
         })
         res.sendStatus(201);
     } catch (error) {
-        res.status(400).send(error);
+        res.status(500).send(error);
     } 
 
     try {
@@ -82,7 +82,7 @@ app.get('/participants', async (req, res) =>{
         const participants = await db.collection('participants').find().toArray();
         res.send(participants);
     } catch (error) {
-        res.status(400).send(error)
+        res.status(500).send(error)
     }
 
 })
@@ -99,20 +99,28 @@ app.post('/messages', async (req, res) => {
     const validation = messageSchema.validate(message, {abortEarly: false});
 
     if(validation.error){
-        console.log(validation.error.details.map(err => err.message))
+        res.status(422).send(validation.error.details.map(err => err.message));
+        return;
     }
-
-    //console.log(req.headers);
 
     try {
-        const messages = await db.collection('messages').find().toArray();
-        //console.log(messages)
+        const validName = await db.collection('participants').findOne({name: user});
+        if (!validName){
+            res.status(422).send('Usuário inválido');
+            return;
+        }
     } catch (error) {
-        console.log(error)
+        res.status(500).send(error)
     }
 
-    res.send(message);
+    try {
+        await db.collection('participants').insertOne(message);
+        res.sendStatus(201);
+    } catch (error) {
+        res.status(500).send(error)
+    }
 })
+
 
 
 
