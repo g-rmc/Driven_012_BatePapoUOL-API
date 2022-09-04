@@ -40,18 +40,6 @@ function filterMessage(message, user) {
     return true;
 }
 
-function maxMessages(index, limit, length) {
-    if (!isNaN(limit)) {
-        if (index >= length - limit) {
-            return true;
-        } else {
-            return false;
-        }
-    } else {
-       return true 
-    }
-}
-
 //Participants
 
 app.post('/participants', async (req, res) =>{
@@ -194,7 +182,7 @@ app.get('/messages', async (req, res) => {
     try {
         const messages = await db.collection('messages').find().toArray();
         let filteredMessages = messages.filter(message => filterMessage(message, user));
-        filteredMessages = filteredMessages.filter((message, index) => maxMessages(index, limit, filteredMessages.length));
+        filteredMessages = filteredMessages.slice(-limit);
         res.send(filteredMessages)
     } catch (error) {
         res.status(500).send(error)
