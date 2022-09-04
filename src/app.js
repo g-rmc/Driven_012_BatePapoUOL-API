@@ -4,6 +4,7 @@ import { MongoClient, ObjectId } from 'mongodb';
 import dotenv from 'dotenv';
 import joi from 'joi';
 import dayjs from 'dayjs';
+import { stripHtml } from "string-strip-html";
 
 dotenv.config();
 
@@ -44,7 +45,9 @@ function filterMessage(message, user) {
 
 app.post('/participants', async (req, res) =>{
 
-    const { name } = req.body;
+    let { name } = req.body;
+
+    name = stripHtml(name).result;
 
     const validation = nameSchema.validate({name});
     if(validation.error){
@@ -143,10 +146,17 @@ setInterval(async () => {
 
 app.post('/messages', async (req, res) => {
 
-    const { to, text, type } = req.body;
-    const { user } = req.headers;
+    let { to, text, type } = req.body;
+    let { user } = req.headers;
+
+    to = stripHtml(to).result;
+    text = stripHtml(text).result;
+    type = stripHtml(type).result;
+    user = stripHtml(user).result;
 
     const message = {from: user, to, text, type, time: dayjs().format('HH:mm:ss')}
+
+    console.log(message);
 
     const validation = messageSchema.validate(message, {abortEarly: false});
 
@@ -194,7 +204,9 @@ app.get('/messages', async (req, res) => {
 
 app.post('/status', async (req, res) => {
 
-    const { user } = req.headers;
+    let { user } = req.headers;
+
+    user = stripHtml(user).result;
 
     try {
         const validName = await db.collection('participants').findOne({name: user});
