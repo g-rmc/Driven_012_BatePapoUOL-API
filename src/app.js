@@ -200,6 +200,40 @@ app.get('/messages', async (req, res) => {
 
 })
 
+app.delete('/messages/:ID_MESSAGE', async (req, res) => {
+
+    let { user } = req.headers;
+    let id = req.params.ID_MESSAGE;
+
+    user = stripHtml(user).result;
+    id = stripHtml(id).result;
+
+    let messageObj;
+
+    try {
+        messageObj = await db.collection('messages').findOne({_id: ObjectId(id)});
+        if(!messageObj){
+            res.status(404).send('Mensagem não encontrada');
+            return;
+        }
+        if(messageObj.from !== user){
+            res.status(401).send('Usuário não autorizado para esta operação');
+            return;
+        }
+    } catch (error) {
+        res.status(500).send(error);
+        return;
+    }
+
+    try {
+        await db.collection('messages').deleteOne({_id: ObjectId(id)});
+        res.sendStatus(200);
+    } catch (error) {
+        res.status(500).send(error);
+    }
+
+})
+
 //Status
 
 app.post('/status', async (req, res) => {
