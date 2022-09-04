@@ -156,8 +156,6 @@ app.post('/messages', async (req, res) => {
 
     const message = {from: user, to, text, type, time: dayjs().format('HH:mm:ss')}
 
-    console.log(message);
-
     const validation = messageSchema.validate(message, {abortEarly: false});
 
     if(validation.error){
@@ -232,6 +230,65 @@ app.delete('/messages/:ID_MESSAGE', async (req, res) => {
         res.status(500).send(error);
     }
 
+})
+
+app.put('/messages/:ID_MESSAGE', async (req, res) => {
+
+    let { to, text, type } = req.body;
+    let { user } = req.headers;
+    let id = req.params.ID_MESSAGE;
+
+    to = stripHtml(to).result;
+    text = stripHtml(text).result;
+    type = stripHtml(type).result;
+    user = stripHtml(user).result;
+    id = stripHtml(id).result;
+
+    const editedMessage = {from: user, to, text, type, time: dayjs().format('HH:mm:ss')}
+
+    const validation = messageSchema.validate(message, {abortEarly: false});
+
+    if(validation.error){
+        res.status(422).send(validation.error.details.map(err => err.message));
+        return;
+    }
+
+    try {
+        const validName = await db.collection('participants').findOne({name: user});
+        if (!validName){
+            res.status(422).send('Usuário inválido');
+            return;
+        }
+    } catch (error) {
+        res.status(500).send(error);
+        return;
+    }
+
+    try {
+        const oldMessage = await db.collection('messages').findOne({_id: ObjectId(id)});
+        if(!oldMessage){
+            res.status(404).send('Mensagem não encontrada');
+            return;
+        }
+        if(oldMessage.from !== user){
+            res.status(401).send('Usuário não autorizado para esta operação');
+            return;
+        }
+    } catch (error) {
+        res.status(500).send(error);
+        return;
+    }
+
+    try {
+        await db.collection('message').updateOne({
+            _id: ObjectId(id)
+        }, {
+            $set: editedMessage
+        })
+        res.sendStatus(200);
+    } catch (error) {
+        res.status(500).send(error);
+    }
 })
 
 //Status
