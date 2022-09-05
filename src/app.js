@@ -190,7 +190,9 @@ app.get('/messages', async (req, res) => {
     try {
         const messages = await db.collection('messages').find().toArray();
         let filteredMessages = messages.filter(message => filterMessage(message, user));
-        filteredMessages = filteredMessages.slice(-limit);
+        if (!isNaN(limit)){
+            filteredMessages = filteredMessages.slice(-limit);
+        }
         res.send(filteredMessages)
     } catch (error) {
         res.status(500).send(error)
@@ -246,7 +248,8 @@ app.put('/messages/:ID_MESSAGE', async (req, res) => {
 
     const editedMessage = {from: user, to, text, type, time: dayjs().format('HH:mm:ss')}
 
-    const validation = messageSchema.validate(message, {abortEarly: false});
+    const validation = messageSchema.validate(editedMessage, {abortEarly: false});
+
 
     if(validation.error){
         res.status(422).send(validation.error.details.map(err => err.message));
@@ -280,7 +283,7 @@ app.put('/messages/:ID_MESSAGE', async (req, res) => {
     }
 
     try {
-        await db.collection('message').updateOne({
+        await db.collection('messages').updateOne({
             _id: ObjectId(id)
         }, {
             $set: editedMessage
